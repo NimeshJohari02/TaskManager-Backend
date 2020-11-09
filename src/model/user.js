@@ -3,56 +3,61 @@ const validator = require("validator");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const Task = require("./task");
-const userSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: true,
-    trim: true,
-  },
-  email: {
-    type: String,
-    trim: true,
-    unique: true,
-    lowecase: true,
-    required: true,
-    validate(value) {
-      if (!validator.isEmail(value)) {
-        throw new Error("Email Not Valid ");
-      }
+const userSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: true,
+      trim: true,
     },
-  },
-  password: {
-    type: String,
-    required: true,
-    trim: true,
-    // ! minlength:6 This can also be used to validate Length
-    validate(value) {
-      if (value.length <= 6) {
-        throw new Error("The Password Should Be Greater than 6 Letters");
-      }
-      if (value.toLowerCase().includes("password")) {
-        throw new Error(" 'Password' Not Allowed ");
-      }
-    },
-  },
-  age: {
-    type: Number,
-    default: 0,
-    validate(value) {
-      if (value < 0) {
-        throw new Error("Age must be +ve ");
-      }
-    },
-  },
-  tokens: [
-    {
-      token: {
-        type: String,
-        required: true,
+    email: {
+      type: String,
+      trim: true,
+      unique: true,
+      lowecase: true,
+      required: true,
+      validate(value) {
+        if (!validator.isEmail(value)) {
+          throw new Error("Email Not Valid ");
+        }
       },
     },
-  ],
-});
+    password: {
+      type: String,
+      required: true,
+      trim: true,
+      // ! minlength:6 This can also be used to validate Length
+      validate(value) {
+        if (value.length <= 6) {
+          throw new Error("The Password Should Be Greater than 6 Letters");
+        }
+        if (value.toLowerCase().includes("password")) {
+          throw new Error(" 'Password' Not Allowed ");
+        }
+      },
+    },
+    age: {
+      type: Number,
+      default: 0,
+      validate(value) {
+        if (value < 0) {
+          throw new Error("Age must be +ve ");
+        }
+      },
+    },
+    tokens: [
+      {
+        token: {
+          type: String,
+          required: true,
+        },
+      },
+    ],
+  },
+  {
+    timestamps: true,
+  }
+);
 userSchema.virtual("tasks", {
   ref: "Task",
   localField: "_id",

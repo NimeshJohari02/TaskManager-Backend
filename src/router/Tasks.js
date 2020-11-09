@@ -4,16 +4,36 @@ const authfun = require("../middleware/auth");
 const TaskRouter = new express.Router();
 const Task = require("../model/task");
 
+//! API OPTIONS :)
+//* /tasks?completed=true
+//* tasks?limit=10&skip=0
+//! NOTE WE SKIP BY THE  MULTIPLE OF LIMIT BECAUSE THEN ONLY IT MAKES SENSE
 TaskRouter.get("/tasks", authfun, async (req, res) => {
+  const completedQuery = req.query.completed;
+  let matchPattern = {};
+  if (req.query.completed) {
+    matchPattern.completed = req.query.completed === "true" ? true : false;
+  }
+
   try {
     // const data = await Task.find({ owner: req.user._id });
     //! SInce We have Setup Ref for the following . WE CAN USE THIS
-    await req.user.populate("tasks").execPopulate();
+    await req.user
+      .populate({
+        path: "tasks",
+        match: matchPattern,
+        options: {
+          limit: parseInt(req.query.limit),
+          skip: parseInt(req.query.skip),
+        },
+      })
+      .execPopulate();
     res.status(200).send(req.user.tasks);
   } catch (e) {
     res.send(e);
   }
 });
+
 TaskRouter.get("/tasks/:id", authfun, async (req, res) => {
   try {
     const id = req.params.id;
