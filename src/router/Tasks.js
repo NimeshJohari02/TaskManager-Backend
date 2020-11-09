@@ -7,6 +7,8 @@ const Task = require("../model/task");
 //! API OPTIONS :)
 //* /tasks?completed=true
 //* tasks?limit=10&skip=0
+//* tasks?sortBy=createdAt_desc
+//* tasks?completed=true&sortBy=createdAt_desc
 //! NOTE WE SKIP BY THE  MULTIPLE OF LIMIT BECAUSE THEN ONLY IT MAKES SENSE
 TaskRouter.get("/tasks", authfun, async (req, res) => {
   const completedQuery = req.query.completed;
@@ -14,7 +16,12 @@ TaskRouter.get("/tasks", authfun, async (req, res) => {
   if (req.query.completed) {
     matchPattern.completed = req.query.completed === "true" ? true : false;
   }
-
+  let sort = {};
+  if (req.query.sortBy) {
+    const arr = req.query.sortBy.split("_");
+    console.log(arr);
+    sort[arr[0]] = arr[1] === "desc" ? -1 : 1;
+  }
   try {
     // const data = await Task.find({ owner: req.user._id });
     //! SInce We have Setup Ref for the following . WE CAN USE THIS
@@ -25,6 +32,7 @@ TaskRouter.get("/tasks", authfun, async (req, res) => {
         options: {
           limit: parseInt(req.query.limit),
           skip: parseInt(req.query.skip),
+          sort: sort,
         },
       })
       .execPopulate();
