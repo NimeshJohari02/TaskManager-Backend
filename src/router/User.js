@@ -1,9 +1,10 @@
-require("../db/mongoose");
 const express = require("express");
-
+const multer = require("multer");
 const userRouter = new express.Router();
+const sharp = require("sharp");
 const User = require("../model/user");
 const authfun = require("../middleware/auth");
+require("../db/mongoose");
 
 userRouter.post("/users", async (req, res) => {
   const newUser = new User(req.body);
@@ -79,6 +80,55 @@ userRouter.delete("/users/me", authfun, async (req, res) => {
     res.send(req.user);
   } catch (e) {
     res.status(500).send(e);
+  }
+});
+const avatar = multer({
+  limits: {
+    fileSize: 2000000,
+  },
+  fileFilter(req, file, cb) {
+    if (!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
+      return cb(new Error("Upload Valid Image "));
+    }
+    cb(undefined, true);
+  },
+});
+
+userRouter.post(
+  "/users/me/avatar",
+  authfun, //* Auth Middle Ware
+  avatar.single("avatar"),
+  async (req, res) => {
+    // req.user.avatar = req.file.buffer;
+    const buffer = await sharp(req.file.buffer)
+      .resize({ width: 250, height: 250 })
+      .png()
+      .toBuffer();
+    req.user.avatar = buffer;
+    await req.user.save();
+    res.send("Uploaded");
+  },
+  (err, req, res, next) => {
+    res.status(400).send({ error: err.message });
+  }
+);
+
+userRouter.delete("/users/me/avatar", authfun, async (req, res) => {
+  req.user.avatar = undefined;
+  await req.user.save();
+  res.send({ message: "Deleted Avatar" });
+});
+
+userRouter.get("/users/:id/avatar", async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user || user.avatar === undefined) {
+      throw new Error("No Image");
+    }
+    res.set("content-type", "image/png");
+    res.send(user.avatar);
+  } catch (e) {
+    res.status(404);
   }
 });
 
